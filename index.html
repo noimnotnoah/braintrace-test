@@ -3,144 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cognitive Speed Test</title>
-<meta name="theme-color" content="#111113">
+<title>F1 Reaction Timer</title>
+<meta name="theme-color" content="#0b0b0e">
 <style>
-  :root { --bg:#111113; --fg:#e8e8ec; --dim:#7a7a85; --line:#26262b; --accent:#00e08a; }
-  * { margin:0; padding:0; box-sizing:border-box; }
+  :root { --bg:#0b0b0e; --fg:#eaeaea; --dim:#77777f; --line:#222228; --red:#e10600; --green:#00d13a; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
   body {
-    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    font-family:'Helvetica Neue',Arial,sans-serif;
     background:var(--bg); color:var(--fg);
-    min-height:100vh; display:flex; align-items:center; justify-content:center;
-    padding:24px; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px; overflow:hidden;
+    user-select:none;
   }
-  .wrap { width:100%; max-width:520px; }
+  .wrap { width:100%; max-width:520px; text-align:center; position:relative; }
   .hidden { display:none !important; }
 
-  /* header bar to look legit */
+  /* legit F1 header */
   .bar {
-    display:flex; align-items:center; justify-content:space-between;
-    font-size:.72rem; letter-spacing:.14em; text-transform:uppercase;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    font-size:.72rem; letter-spacing:.22em; text-transform:uppercase;
     color:var(--dim); border-bottom:1px solid var(--line);
-    padding-bottom:12px; margin-bottom:44px;
+    padding-bottom:12px; margin-bottom:40px;
   }
-  .dot { width:8px;height:8px;border-radius:50%;background:var(--accent); display:inline-block; margin-right:8px; }
+  .mark { display:inline-block; width:26px; height:26px; border-radius:50%;
+          background:conic-gradient(from 40deg,var(--red),#fff,#222,var(--red));
+          } /* stylised tyre */
 
-  h1 { font-size:1.9rem; font-weight:650; letter-spacing:-.01em; line-height:1.2; }
-  .kicker { color:var(--dim); font-size:.8rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:14px; }
-  p.lead { color:var(--dim); line-height:1.6; margin:16px 0 28px; font-size:.98rem; }
+  h1 { font-size:2rem; font-weight:750; letter-spacing:-.01em; line-height:1.15; }
+  .kicker { color:var(--dim); font-size:.78rem; letter-spacing:.14em; text-transform:uppercase; margin-bottom:14px; }
+  p.lead { color:var(--dim); line-height:1.65; margin:18px 0 30px; font-size:.98rem; }
 
   .btn {
-    cursor:pointer; background:var(--accent); color:#0a120e; border:none;
-    font-weight:650; font-size:1.02rem; padding:14px 22px; border-radius:8px;
-    transition:transform .06s ease, opacity .15s ease;
+    cursor:pointer; background:var(--red); color:#fff; border:none;
+    font-weight:700; font-size:1.05rem; padding:15px 30px; border-radius:8px;
+    letter-spacing:.02em; transition:transform .06s ease, opacity .15s ease;
   }
-  .btn:hover { opacity:.92; } .btn:active { transform:scale(.98); }
-  .btn.dim { background:var(--line); color:var(--fg); }
+  .btn:hover { opacity:.9; } .btn:active { transform:scale(.97); }
 
-  .stat { background:#18181b; border:1px solid var(--line); border-radius:10px; padding:20px; }
-  .stat .label { color:var(--dim); font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; }
-  .stat .val { font-size:2.2rem; font-weight:700; margin-top:6px; font-variant-numeric:tabular-nums; }
+  /* the start lights */
+  .lights { display:flex; justify-content:center; gap:18px; padding:34px 0; }
+  .lid {
+    width:52px; height:52px; border-radius:50%;
+    background:#1c1c22; box-shadow:inset 0 0 12px rgba(0,0,0,.7);
+    transition:background .08s ease, box-shadow .08s ease;
+  }
+  .lid.on { background:radial-gradient(circle at 40% 35%, #ff4a3d, var(--red) 70%); box-shadow:0 0 24px var(--red); }
+  .lid.off { background:#1c1c22; box-shadow:none; }
 
-  .status { margin-top:26px; color:var(--dim); font-size:.9rem; }
-  .reveal h1 { font-size:3rem; letter-spacing:-.02em; }
+  .status { margin-top:26px; min-height:24px; color:var(--dim); font-size:.95rem; }
+  .status.go { color:var(--green); font-weight:700; letter-spacing:.2em; text-transform:uppercase; }
 
-  /* blinking cursor for pretence of "thinking" */
-  .scanline { font-family:ui-monospace,Menlo,monospace; font-size:.82rem; color:var(--accent); }
+  .result { font-size:3rem; font-weight:800; margin-top:10px; font-variant-numeric:tabular-nums; }
+  .result small { font-size:.7rem; color:var(--dim); font-weight:400; display:block; margin-top:6px; letter-spacing:.1em; }
+
+  /* reveal */
+  .reveal h1 { font-size:clamp(3rem,12vw,5rem); letter-spacing:-.02em; font-weight:900; color:var(--green); }
+  .reveal .flag { font-size:2.6rem; display:inline-block; transform:rotate(-6deg); }
+  .reveal p.lead { font-size:1rem; }
+
+  #fx { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
+  .f { position:absolute; top:-30px; animation:drop linear forwards; }
+  @keyframes drop { to { transform:translateY(112vh) rotate(360deg); opacity:0; } }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="bar">
-    <span><span class="dot"></span>neuroscan // certified</span>
-    <span>build 2.4.1</span>
+    <span class="mark"></span>
+    <span>pit-lane reaction // live timing</span>
+    <span class="mark"></span>
   </div>
 
   <!-- step 0 : landing -->
   <div id="step0">
-    <div class="kicker">cognitive speed test · v2</div>
-    <h1>How fast is your reaction time?</h1>
-    <p class="lead">You'll see a green screen. Click the moment it appears. Most people score under 250&nbsp;ms. Your brain will be timed and ranked.</p>
-    <button class="btn" id="btn0">Start test</button>
+    <div class="kicker">officially licensed reaction test</div>
+    <h1>How fast is your<br>race start reaction?</h1>
+    <p class="lead">Five lights, one by one, like a real grid slot.<br>
+    The moment all five go out and the field is green — hit the screen.<br>
+    Slow starts get you a penalty. No pressure.</p>
+    <button class="btn" id="btn0">Take your grid position</button>
     <div class="status" id="status0"></div>
   </div>
 
-  <!-- step 1 : the trap instructions -->
+  <!-- step 1 : live run -->
   <div id="step1" class="hidden">
-    <div class="kicker">calibration</div>
-    <h1>Before we measure.<br>Read this carefully.</h1>
-    <p class="lead">To calibrate your attention, we need you to perform one conscious thought.<br><br>
-    Think of the word that appears in <strong style="color:var(--fg)">green</strong> when the button is clicked.<br>
-    The first green word you picture is your calibration anchor.<br><br>
-    <span style="color:var(--dim)">Instructions:</span> <strong style="color:var(--accent)">do not think of The Game.</strong></p>
-    <button class="btn" id="btn1">I understand — begin</button>
-  </div>
-
-  <!-- step 2 : fake test -->
-  <div id="step2" class="hidden">
-    <div class="kicker">live measure</div>
-    <div class="stat">
-      <div class="label">current calibration anchor</div>
-      <div class="val" id="anchor">—</div>
+    <div class="lights" id="lights">
+      <div class="lid" id="l0"></div>
+      <div class="lid" id="l1"></div>
+      <div class="lid" id="l2"></div>
+      <div class="lid" id="l3"></div>
+      <div class="lid" id="l4"></div>
     </div>
-    <div class="status scanline" id="scan"></div>
+    <div class="status" id="status1">waiting for lights out…</div>
   </div>
 
-  <!-- step 3 : reveal -->
-  <div id="step3" class="hidden">
-    <div class="kicker">test complete</div>
+  <!-- step 2 : reveal -->
+  <div id="step2" class="hidden">
     <div class="reveal">
-      <h1 style="color:var(--accent)">you lost<br>The Game.</h1>
-      <p class="lead" style="margin-top:20px">
-        You just read the instruction, you pictured the anchor, and you're now thinking about it on purpose.<br><br>
-        Every time you remember this page today — and you will — you lose again.<br><br>
-        <span id="signed" style="color:var(--dim)"></span>
+      <div class="flag">🏁</div>
+      <h1>you lost<br>The Game.</h1>
+      <p class="lead" style="margin:22px 0">
+        Lights out and away she went — straight into The Game.<br>
+        Every time you recall this start tonight, you lose again.<br>
+        <span id="signed" style="color:var(--dim);font-size:.85rem;"></span>
       </p>
     </div>
   </div>
 
 </div>
+<div id="fx"></div>
+
 <script>
 (function(){
-  var $ = function(id){ return document.getElementById(id); };
-  var step = function(n){ ['step0','step1','step2','step3'].forEach(function(s,i){ $(s).classList.toggle('hidden', i!==n); }); };
+  var $=function(id){return document.getElementById(id);};
+  var step=function(n){['step0','step1','step2'].forEach(function(s,i){$(s).classList.toggle('hidden',i!==n);});};
+  var lights=[$('l0'),$('l1'),$('l2'),$('l3'),$('l4')];
+  var st=$('status1');
 
-  $('btn0').addEventListener('click', function(){ step(1); });
-
-  $('btn1').addEventListener('click', function(){
-    step(2);
-    var anchor = 'the word you were told not to think about';
-    $('anchor').textContent = 'the game';
-    var s = $('scan');
-    var i = 0;
-    var lines = ['scanning neural trace…','measuring suppression impulse…','compiling calibration anchor…'];
-    var iv = setInterval(function(){
-      if(i < lines.length){ s.textContent = lines[i++]; }
-      else { clearInterval(iv); setTimeout(function(){ step(3); trigger(); }, 500); }
-    }, 650);
+  $('btn0').addEventListener('click',function(){
+    step(1);
+    lightSeq();
   });
 
-  function trigger(){
-    var w=window.innerWidth, h=window.innerHeight, colors=['#00e08a','#ffd166','#ff6b6b','#fff'];
-    for(var k=0;k<40;k++){
-      var el=document.createElement('div');
-      el.style.position='fixed'; el.style.top='-20px';
-      el.style.left=(Math.random()*w)+'px';
-      el.style.width=el.style.height=(Math.random()*9+4)+'px';
-      el.style.background=colors[k%colors.length];
-      el.style.pointerEvents='none';
-      el.style.animation='f 2s '+((Math.random()*2.5)+0.5)+'s linear forwards';
-      var st=document.createElement('style');
-      st.textContent='@keyframes f{to{transform:translateY('+(h+40)+'px) rotate(540deg);opacity:0}}';
-      document.head.appendChild(st);
-      document.body.appendChild(el);
-    }
+  function lightSeq(){
+    // reset
+    lights.forEach(function(l){l.classList.remove('on');});
+    st.textContent='lights out incoming…';
+    st.classList.remove('go');
+
+    var i=0;
+    var iv=setInterval(function(){
+      if(i>4){ // all lit: flicker then go green after random delay
+        clearInterval(iv);
+        var go=900+Math.random()*1500;
+        var gv=setTimeout(function(){
+          lights.forEach(function(l){l.classList.remove('red');l.classList.add('on');l.style.background='radial-gradient(circle at 40% 35%, #6fffa0, var(--green) 70%)';l.style.boxShadow='0 0 26px var(--green)';});
+          st.textContent='GO !';
+          st.classList.add('go');
+          goTime=+new Date();
+        },go);
+        holdGoTimer=gv;
+        return;
+      }
+      lights[i].classList.add('on');
+      i++;
+    },420);
+    seqTimer=iv;
   }
 
-  // signed with a hidden timestamp - makes it feel caught live
-  var d=new Date();
-  $('signed').textContent = 'logged '+d.toLocaleTimeString()+' · sent by a friend';
+  var goTime=null, seqTimer=null, holdGoTimer=null;
+  var done=false;
+
+  // tap anywhere when green
+  document.addEventListener('click',function(){
+    if(done) return;
+    if(goTime!==null && $('step1') && !$('step1').classList.contains('hidden')){
+      done=true;
+      var ms=new Date()-goTime;
+      // reveal celebrates the "destroyed" reaction as a gag
+      showReveal(ms);
+    }
+  },{passive:true});
+
+  function showReveal(ms){
+    clearTimeout(holdGoTimer); clearInterval(seqTimer);
+    step(2);
+    spawnFx();
+    var d=new Date();
+    $('signed').textContent='reaction '+(Math.max(ms,0))+' ms · logged '+d.toLocaleTimeString()+' · sent from the paddock';
+  }
+
+  function spawnFx(){
+    var w=window.innerWidth,h=window.innerHeight,emo=['🏁','🏎️','🟥','✨','⚑'],
+        colors=['#e10600','#00d13a','#fff','#ffd600'];
+    for(var k=0;k<55;k++){
+      var el=document.createElement('div');
+      el.className='f';
+      var kind=Math.random();
+      if(kind<0.3){ el.textContent=emo[k%emo.length]; el.style.fontSize=(Math.random()*10+18)+'px'; el.style.top='-40px'; }
+      else { el.style.width=el.style.height=(Math.random()*8+4)+'px'; el.style.background=colors[k%colors.length]; }
+      el.style.left=(Math.random()*w)+'px';
+      el.style.animationDuration=(Math.random()*2+2.2)+'s';
+      el.style.animationDelay=(Math.random()*1.2)+'s';
+      $('fx').appendChild(el);
+    }
+    setTimeout(function(){ $('fx').innerHTML=''; }, 6000);
+  }
 })();
 </script>
 </body>
