@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>You Just Got The Gamed</title>
+<meta name="theme-color" content="#0f0f1a">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #0f0f1a;
+    color:#f4f4f8;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px;
+    overflow:hidden;
+  }
+  .stage { text-align:center; max-width:560px; width:100%; position:relative; }
+  .hidden { display:none !important; }
+
+  #phase-start h1 { font-size:clamp(1.6rem,5vw,2.8rem); line-height:1.15; margin-bottom:18px; }
+  #phase-start h1 span { color:#ffd93d; }
+  #phase-start p { color:#a9a9c0; font-size:1.05rem; margin-bottom:34px; }
+  .big-btn {
+    cursor:pointer; border:none; border-radius:16px;
+    background:linear-gradient(135deg,#ffd93d,#ff9f1c);
+    color:#1a1a10; font-size:1.5rem; font-weight:bold;
+    padding:22px 40px; transition:transform .08s ease, box-shadow .2s ease;
+    box-shadow:0 10px 30px rgba(255,217,61,.25);
+  }
+  .big-btn:hover { transform:scale(1.04); }
+  .big-btn:active { transform:scale(.97); }
+
+  #phase-timer { display:flex; flex-direction:column; align-items:center; gap:22px; }
+  .bar { width:100%; height:14px; background:#252540; border-radius:8px; overflow:hidden; }
+  .bar-fill { height:100%; width:0%; background:linear-gradient(90deg,#ffd93d,#ff9f1c); border-radius:8px; transition:width .2s linear; }
+  #phase-timer p { color:#a9a9c0; }
+
+  #phase-final h1 {
+    font-size:clamp(2.4rem,9vw,4.5rem); font-weight:900; letter-spacing:-1px;
+    background:linear-gradient(90deg,#ff6b6b,#ffd93d,#ff9f1c);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    margin-bottom:16px; line-height:1.05;
+  }
+  #phase-final .sub { font-size:clamp(1rem,4vw,1.35rem); color:#e8e8f2; margin-bottom:12px; }
+  #phase-final .small { color:#8f8fab; font-size:.95rem; margin-bottom:30px; line-height:1.6; }
+  .trophy { font-size:4rem; display:inline-block; }
+  .credits { margin-top:40px; color:#55556e; font-size:.8rem; }
+
+  /* floating confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
+  .c { position:absolute; top:-20px; border-radius:3px; animation:fall linear forwards; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(720deg); opacity:0; } }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- PHASE 1 : the trap -->
+  <div id="phase-start">
+    <h1>Can you go 10 seconds<br>without thinking about <span>The Game</span>?</h1>
+    <p>Think you're immune? Think you've never lost?<br>Most people can't even last 10 seconds.</p>
+    <button class="big-btn" id="startBtn">I'm ready. Prove it</button>
+  </div>
+
+  <!-- PHASE 2 : fake timer -->
+  <div id="phase-timer" class="hidden">
+    <div style="font-size:1.3rem">Holding it off... don't think about it...</div>
+    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    <p id="timerText">0.0 seconds of not thinking about The Game</p>
+  </div>
+
+  <!-- PHASE 3 : the reveal -->
+  <div id="phase-final" class="hidden">
+    <div class="trophy">🏆</div>
+    <h1>YOU GOT<br>THE GAMED</h1>
+    <div class="sub">congratulations. you just lost The Game.</div>
+    <div class="small">every second you spent here, every time you read the words on this page,<br>
+    every time you think about it again tomorrow — you're still playing.<br>
+    tell your friends. make them lose too.</div>
+    <button class="big-btn" id="reclaimBtn">wait... I didn't lose</button>
+    <div class="credits">the game. you're playing it right now · built by noah</div>
+  </div>
+
+</div>
+<div id="confetti"></div>
+
+<script>
+(function(){
+  var start = document.getElementById('phase-start');
+  var timer = document.getElementById('phase-timer');
+  var fin = document.getElementById('phase-final');
+  var fill = document.getElementById('barFill');
+  var txt = document.getElementById('timerText');
+  var t0 = null;
+
+  document.getElementById('startBtn').addEventListener('click', function(){
+    start.classList.add('hidden');
+    timer.classList.remove('hidden');
+    t0 = Date.now();
+    var iv = setInterval(function(){
+      var t = Math.min((Date.now()-t0)/100, 1);
+      fill.style.width = (t*100)+'%';
+      txt.textContent = (t*10).toFixed(1)+' seconds of not thinking about The Game';
+      if(t>=1){ clearInterval(iv); setTimeout(showFinal, 250); }
+    }, 80);
+  });
+
+  // if they quit mid-run they still lost, obviously
+  function showFinal(){
+    timer.classList.add('hidden');
+    fin.classList.remove('hidden');
+    burstConfetti();
+  }
+
+  // reclaim button just re-games them
+  document.getElementById('reclaimBtn').addEventListener('click', function(){
+    this.textContent = "you literally just said you didn't lose";
+    this.style.opacity = .6;
+    this.disabled = true;
+    burstConfetti();
+  });
+
+  function burstConfetti(){
+    var wrap = document.getElementById('confetti');
+    var colors = ['#ffd93d','#ff9f1c','#ff6b6b','#ffd166','#2ec4b6','#fff'];
+    for(var i=0;i<60;i++){
+      var el=document.createElement('div');
+      el.className='c';
+      var s=Math.random()*10+6;
+      el.style.left=Math.random()*100+'vw';
+      el.style.width=s+'px'; el.style.height=s+'px';
+      el.style.background=colors[Math.floor(Math.random()*colors.length)];
+      el.style.animationDuration=(Math.random()*2+2.5)+'s';
+      el.style.transform='rotate('+(Math.random()*360)+'deg)';
+      wrap.appendChild(el);
+    }
+    setTimeout(function(){ while(wrap.firstChild) wrap.removeChild(wrap.firstChild); }, 5000);
+  }
+})();
+</script>
+</body>
+</html>
